@@ -1,12 +1,17 @@
 import React, { useState } from 'react'
-import { StyleSheet, Text, View, FlatList } from 'react-native'
-import { AddTodo } from './src/components/AddTodo'
+import { StyleSheet, View, Alert } from 'react-native'
 
 import { Navbar } from './src/components/Navbar'
-import { Todo } from './src/components/Todo'
+import { MainScreen } from './src/screens/MainScreen'
+import { TodoScreen } from './src/screens/TodoScreen'
+import {THEME} from "./src/theme";
+
 
 export default function App() {
-	const [todos, setTodos] = useState([])
+	const [todoId, setTodoId] = useState(null)
+	const [todos, setTodos] = useState([
+		// { id: '1', title: 'one title' },
+	])
 
 	const addTodo = (title) => {
 		setTodos(prev => [
@@ -16,19 +21,52 @@ export default function App() {
 			},
 			...prev])
 	}
+	const removeTodo = id => {
+		const todo = todos.find(t => t.id === id)
+
+		Alert.alert(
+			"Delete Element",
+			`Are you sure delete ${todo.title} ?`,
+			[
+				{
+					text: "Cancel",
+					style: "cancel"
+				},
+				{
+					text: "Delete", style: 'destructive', onPress: () => {
+						setTodoId(null)
+						setTodos(prev => prev.filter(todo => todo.id !== id))
+					}
+				}
+			],
+			{ cancelable: true }
+		)
+	}
+
+	const updateTodo = (id, title) => {
+		setTodos(old => old.map(todo => {
+			if (todo.id === id) {
+				todo.title = title
+			}
+			return todo
+		}))
+	}
+
+	let content = (
+		<MainScreen todos={todos} addTodo={addTodo} removeTodo={removeTodo} openTodo={setTodoId} />
+	);
+
+	if (todoId) {
+		const selectedTodo = todos.find(todo => todo.id === todoId)
+		content = <TodoScreen onRemove={removeTodo} goBack={() => setTodoId(null)} todo={selectedTodo} onSave={updateTodo} />
+	}
 
 	return (
 		<View >
 			<Navbar title='Todo App' />
 			<View style={styles.container}>
-				<AddTodo onSubmit={addTodo} />
-				<FlatList
-					data={todos}
-					renderItem={({ item }) => <Todo todo={item} />}
-					keyExtractor={(i) => i.id.toString()}
-				/>
+				{content}
 			</View>
-
 		</View>
 	)
 }
@@ -36,6 +74,6 @@ export default function App() {
 const styles = StyleSheet.create({
 	container: {
 		paddingVertical: 20,
-		paddingHorizontal: 30
+		paddingHorizontal: THEME.PADDING_HORIZONTAL
 	},
 })
